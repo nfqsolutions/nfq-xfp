@@ -5,6 +5,22 @@ from collections import namedtuple
 # 3rd party imports:
 # package imports:
 
+
+def array_frombytes(bytearray, var_indexes):
+    """
+    function to make array package py2with3
+    """
+    timestep_array = array.array('d')
+    result = array.array('d')
+    try:
+        timestep_array.frombytes(bytearray)
+    except AttributeError:
+        timestep_array.fromstring(bytearray)
+    for i in var_indexes:
+        result.append(timestep_array[i])
+    return result
+
+
 CatalogItem = namedtuple('CatalogItem', ['name',
                                          'icomp',
                                          'numc',
@@ -61,24 +77,23 @@ class Trcgrf(object):
         var_entry = [entry for entry in self.entries if (
             var_name in entry.name) and (entry.numc == var_numc)][0]
         # manage the case of an axial variable.
-        time_data = []
-        var_indexes = [var_entry.byte_index + i for i in range(var_entry.nwrd)]
+        var_indexes = [0] + [var_entry.byte_index + i
+                             for i in range(var_entry.nwrd)]
         var_data = []
         # first check if var exists in catalog:
         with open(self.filepath, 'rb') as file:
             # skip catalog part:
             file.read(self.catalogsend)
-            for i in range(501):
-                size = struct.unpack('<i', file.read(4))[0]
+            while file.read(4) != b'':
+                size = 4
                 timesize = struct.unpack('<i', file.read(size))[0]
                 size = struct.unpack('<i', file.read(4))[0]
                 bytesize = struct.unpack('<i', file.read(4))
-                timestep_array = array.array('d')
-                timestep_array.frombytes(file.read(timesize * 8))
+                timestep_array = array_frombytes(file.read(timesize * 8),
+                                                 var_indexes)
                 bytesize = struct.unpack('<i', file.read(4))
-                time_data.append(timestep_array[0])
-                var_data.append([timestep_array[i] for i in var_indexes])
-        return time_data, var_data
+                var_data.append(timestep_array)
+        return var_data
 
 
 if __name__ == '__main__':
@@ -86,5 +101,5 @@ if __name__ == '__main__':
     test = Trcgrf('/home/hmarrao/workspace/nfq-xfp/tests/files/TRCGRF_example')
     # test.get_var_data('phony')
     print(test.get_var_data(b'CLEVL', 68))
-    #for entry in test.entries:
+    # for entry in test.entries:
     #    print(entry)
