@@ -63,7 +63,7 @@ class Trcgrf(object):
                 '<8s I I I I I I I', file.read(size))
             self.entries.append(
                 CatalogItem(
-                    name, icomp, numc, igarty, ipos, nwrd, ilrn, ieuc,
+                    name.strip(), icomp, numc, igarty, ipos, nwrd, ilrn, ieuc,
                     byte_index))
             self.catalogsend += size
             size = struct.unpack('<i', file.read(bytesize))[0]
@@ -84,22 +84,25 @@ class Trcgrf(object):
         with open(self.filepath, 'rb') as file:
             # skip catalog part:
             file.read(self.catalogsend)
-            while file.read(4) != b'':
-                size = 4
-                timesize = struct.unpack('<i', file.read(size))[0]
-                size = struct.unpack('<i', file.read(4))[0]
-                bytesize = struct.unpack('<i', file.read(4))
-                timestep_array = array_frombytes(file.read(timesize * 8),
-                                                 var_indexes)
-                bytesize = struct.unpack('<i', file.read(4))
-                var_data.append(timestep_array)
+            try:
+                while file.read(4) != b'':
+                    size = 4
+                    timesize = struct.unpack('<i', file.read(size))[0]
+                    size = struct.unpack('<i', file.read(4))[0]
+                    bytesize = struct.unpack('<i', file.read(4))
+                    timestep_array = array_frombytes(file.read(timesize * 8),
+                                                     var_indexes)
+                    bytesize = struct.unpack('<i', file.read(4))
+                    var_data.append(timestep_array)
+            except:
+                pass
         return var_data
 
 
 if __name__ == '__main__':
     # Test drive this
-    test = Trcgrf('/home/hmarrao/workspace/nfq-xfp/tests/files/TRCGRF_example')
+    test = Trcgrf('/home/ifernandez/workspace/nfq-xfp/tests/files/TRCGRF')
     # test.get_var_data('phony')
-    print(test.get_var_data(b'CLEVL', 68))
+    print(test.get_var_data(b'DELT', 0))
     # for entry in test.entries:
     #    print(entry)

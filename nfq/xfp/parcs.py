@@ -40,7 +40,7 @@ class ParcsBpf(object):
                 self.case_text2 = stream.unpack_string()
                 self.case_text3 = stream.unpack_string()
                 self.case_text4 = stream.unpack_string()
-                stream.unpack_int()  # size of data in bytes
+                self.biteSize =stream.unpack_int()  # size of data in bytes
                 catalog_size = stream.unpack_int()  # size of data
                 stream.unpack_int()  # not know what is
                 stream.unpack_int()  # not know what is
@@ -69,25 +69,29 @@ class ParcsBpf(object):
         with open(self.filepath, 'rb') as bpf_file:
             stream = xdrlib.Unpacker(bpf_file.read())
             stream.set_position(self.catalogsend)
-            while 'PlotDataFlt' in str(stream.unpack_string()):
-                stream.unpack_int()  # some unkown data
-                stream.unpack_int()  # some unkown data
-                stream.unpack_int()  # some unkown data
-                array_size = stream.unpack_int()  # the array size:
-                current_position = stream.get_position()
-                temp_data = []
-                for i in var_indexes:
-                    stream.set_position(current_position + 4 * i)
-                    temp_data.append(stream.unpack_float())
-                var_data.append(temp_data)
-                stream.set_position(current_position + array_size * 4)
+            try:
+                while 'PlotDataFlt' in str(stream.unpack_string()):
+
+                    stream.unpack_int()  # some unkown data
+                    stream.unpack_int()  # some unkown data
+                    stream.unpack_int()  # some unkown data
+                    array_size = stream.unpack_int()  # the array size:
+                    current_position = stream.get_position()
+                    temp_data = []
+                    for i in var_indexes:
+                        stream.set_position(current_position + 4 * i)
+                        temp_data.append(stream.unpack_float())
+                    var_data.append(temp_data)
+                    stream.set_position(current_position + array_size * 4)
+            except:
+                pass
         return var_data
 
 
 if __name__ == '__main__':
-    test = ParcsBpf('/home/hmarrao/workspace/tracbf1-parcs/validation/executions/Benchmark/3/CNC_c5_SCRAM61_SSA.bpf')
-    print(test.get_var_data('bank-0145'))
-    print(test.get_var_data('bank-0144'))
-    print(test.get_var_data('bank-0143'))
-    print(test.get_var_data('bank-0142'))
-    print(test.get_var_data('bank-0020'))
+    test = ParcsBpf('/home/ifernandez/workspace/nfq-xfp/tests/files/c17_Atws_CTR.bpf')
+    #test = ParcsBpf('/home/ifernandez/workspace/nfq-xfp/tests/files/PARCS.bpf')
+    print(test.catalog[0])
+    print(test.get_var_data('time'))
+    print(test.get_var_data('ppml-A13R0406'))
+
